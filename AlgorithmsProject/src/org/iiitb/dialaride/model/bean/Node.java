@@ -107,8 +107,10 @@ public class Node {
 		 */
 		Interval searchInterval = new Interval(0, 1440, null);
 		List<Interval> intervals = cabsSet.searchAll(searchInterval);
-		for (Interval interval: intervals) {
-			sb.append(interval.getCab().getCabNo()).append(" ");
+		for (Interval intv: intervals) {
+			Cab cab = intv.getCab();
+			sb.append(cab.getCabNo()).append(" (").append(intv.getLow())
+					.append(",").append(intv.getHigh()).append(") ");
 		}
 		sb.append("\n");
 		return sb.toString();

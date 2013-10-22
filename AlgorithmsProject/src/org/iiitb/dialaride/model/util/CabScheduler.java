@@ -1,8 +1,6 @@
 package org.iiitb.dialaride.model.util;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,6 +25,9 @@ import org.iiitb.dialaride.model.datastructures.consts.SchedulerConstants;
 public class CabScheduler {
 
 	public void schedule(DialARideModel model) {
+		int successfulScheduling = 0;
+		int rejectedReqs = 0;
+		int revenue = 0;
 		Queue<Event> eventQueue = new PriorityQueue<Event>();
 
 		SortedMap<Integer, List<RideRequest>> rideRequests = model
@@ -47,21 +48,23 @@ public class CabScheduler {
 				boolean found = findACab(model, event.getRideRequest(),
 						eventQueue);
 				if (found) {
+					successfulScheduling += 1;
+					revenue += model.getCost()[event.getRideRequest()
+							.getSource()][event.getRideRequest()
+							.getDestination()];
 					System.out.println("**********Gotcha Ride!*************"
 							+ " for Request: " + event.getRideRequest());
 				} else {
+					rejectedReqs += 1;
 					System.out.println("-------------No Ride :-(------------"
 							+ " for Request: " + event.getRideRequest());
 				}
 				break;
 			case REACHED_NODE:
-				if (event.getVersion() == event.getCab().getVersion()) {
-					handleReachedIntermediateNode(model, event);
-					System.out.println("Intermediate Node Reached "
-							+ event.getNodeNumber() + "\t" + event.getCab());
-				} else {
-					System.out.println("Dropping the invalid event");
-				}
+				handleReachedIntermediateNode(model, event);
+				System.out.println("Intermediate Node Reached "
+						+ event.getNodeNumber() + "\t" + event.getCab());
+
 				break;
 			case REACHED_PICKUP_NODE:
 				handleReachedPickupNode(model, event);
@@ -78,6 +81,7 @@ public class CabScheduler {
 									+ ", in Cab" + event.getCab());
 				} else {
 					System.out.println("Dropping the invalid event 2");
+					handleReachedIntermediateNode(model, event);
 				}
 				break;
 			case REACHED_TARGET_NODE:
@@ -88,6 +92,7 @@ public class CabScheduler {
 									+ ", in Cab" + event.getCab());
 				} else {
 					System.out.println("Dropping the invalid event 3");
+					handleReachedIntermediateNode(model, event);
 				}
 				break;
 			default:
@@ -95,6 +100,9 @@ public class CabScheduler {
 			}
 		}
 
+		System.out.println("Successfully scheduled: " + successfulScheduling
+				+ "\nRejected Requests: " + rejectedReqs + "\nRevenue: "
+				+ revenue);
 	}
 
 	private void handleReachedTargetNode(DialARideModel model, Event event,
@@ -103,9 +111,11 @@ public class CabScheduler {
 		cab.setDroppingAnyone(false);
 		Node node = model.getNodes().get(event.getNodeNumber());
 		IntervalTree cabsSet = node.getCabsSet();
+		System.out.println("Before:\n" + printIT(cabsSet));
 		cabsSet.softDelete(new Interval(
 				(int) Math.ceil(event.getTimeInstant()), (int) Math.ceil(event
 						.getTimeInstant()), cab));
+		System.out.println("After:\n" + printIT(cabsSet));
 		cab.setPassengers(cab.getPassengers() - 1);
 		if (!isPartial) {
 			cabsSet.insert(new Interval(
@@ -117,9 +127,11 @@ public class CabScheduler {
 		Cab cab = event.getCab();
 		Node node = model.getNodes().get(event.getNodeNumber());
 		IntervalTree cabsSet = node.getCabsSet();
+		System.out.println("Before:\n" + printIT(cabsSet));
 		cabsSet.softDelete(new Interval(
 				(int) Math.ceil(event.getTimeInstant()), (int) Math.ceil(event
 						.getTimeInstant()), cab));
+		System.out.println("After:\n" + printIT(cabsSet));
 	}
 
 	private void handleReachedPickupNode(DialARideModel model, Event event) {
@@ -127,9 +139,11 @@ public class CabScheduler {
 		cab.setPickingAnyone(false);
 		Node node = model.getNodes().get(event.getNodeNumber());
 		IntervalTree cabsSet = node.getCabsSet();
+		System.out.println("Before:\n" + printIT(cabsSet));
 		cabsSet.softDelete(new Interval(
 				(int) Math.ceil(event.getTimeInstant()), (int) Math.ceil(event
 						.getTimeInstant()), cab));
+		System.out.println("After:\n" + printIT(cabsSet));
 	}
 
 	private boolean findACab(DialARideModel model, RideRequest rideRequest,
@@ -176,7 +190,7 @@ public class CabScheduler {
 									intervalCount);
 						}
 						scheduleARide(cab, model, rideRequest, eventQueue,
-								timeInstant);
+								timeInstant, cabsSet, interval);
 						cab.setPassengers(cab.getPassengers() + 1);
 					}
 				}
@@ -263,7 +277,7 @@ public class CabScheduler {
 			doThePickupWhileServingSomeoneAndServeAll(model, model.getNodes(),
 					rideRequest, eventQueue, timeInstant,
 					rideRequest.getSource(), cab, node.getNodeNumber(),
-					cabFoundInSrc);
+					cabFoundInSrc, cabsSet, interval);
 		} else {
 			noOfHops = thatCabsPath.size();
 			finalNode = thatCabsPath.get(noOfHops - 1).getNodeNumber();
@@ -290,11 +304,14 @@ public class CabScheduler {
 			DialARideModel model, List<Node> nodes, RideRequest rideRequest,
 			Queue<Event> eventQueue, double currentTime, int pickUpDestination,
 			Cab scheduledCab, int sourceOfVehicle,
-			boolean isDifferentNodeFromSrc) {
+			boolean isDifferentNodeFromSrc, IntervalTree cabsSet,
+			Interval interval) {
 		double timeInstant = currentTime;
 		int d = pickUpDestination;
 		int[][] prev = model.getPrev();
 		Stack<Integer> revPath = new Stack<Integer>();
+		Interval deleteInterval = new Interval(0, 1440, scheduledCab);
+		cabsSet.softDelete(deleteInterval);
 		if (isDifferentNodeFromSrc) {
 			scheduledCab.setPickingAnyone(true);
 
@@ -335,6 +352,7 @@ public class CabScheduler {
 		}
 		scheduledCab.getPath().clear();
 
+		Interval removeInterval = new Interval(0, 1440, scheduledCab);
 		int pathSource = rideRequest.getSource();
 		int intSize = intermediateNodes.size();
 		int count = 1;
@@ -342,6 +360,12 @@ public class CabScheduler {
 			if (intermed.getNodeNumber() == rideRequest.getDestination()) {
 				intermed.setDropCount(intermed.getDropCount() + 1);
 			}
+			System.out.println("\n\n\n@@@@@@@@@@@@@@@@@@@@");
+			IntervalTree it = nodes.get(intermed.getNodeNumber()).getCabsSet();
+			System.out.println("Before: " + printIT(it));
+			it.softDelete(removeInterval);
+			System.out.println("After: " + printIT(it));
+
 			if (intermed.getDropCount() > 0) {
 				boolean isLast = false;
 				if (count == intSize) {
@@ -374,7 +398,8 @@ public class CabScheduler {
 	}
 
 	private void scheduleARide(Cab scheduledCab, DialARideModel model,
-			RideRequest rideRequest, Queue<Event> eventQueue, double timeStart) {
+			RideRequest rideRequest, Queue<Event> eventQueue, double timeStart,
+			IntervalTree cabsSet, Interval interval) {
 
 		List<Node> nodes = model.getNodes();
 		Stack<Integer> revPath = new Stack<Integer>();
@@ -396,6 +421,7 @@ public class CabScheduler {
 		src = rideRequest.getSource();
 		scheduledCab.getPath().clear();
 
+		cabsSet.softDelete(interval);
 		while (!revPath.isEmpty()) {
 			dest = revPath.pop();
 			int val = 0;
@@ -510,7 +536,13 @@ public class CabScheduler {
 		int d = pickUpDestination;
 
 		scheduledCab.setPickingAnyone(true);
-		cabsSet.softDelete(interval, intervalCount);
+
+		System.out.println("???????????????????????Before:\n"
+				+ printIT(cabsSet));
+		Interval deleteInterval = new Interval(0, 1440, scheduledCab);
+		nodes.get(sourceOfVehicle).getCabsSet().softDelete(deleteInterval);
+		System.out.println("After:\n" + printIT(cabsSet));
+
 		while (d != sourceOfVehicle) {
 			revPath.add(d);
 			d = prev[sourceOfVehicle][d];
@@ -541,5 +573,16 @@ public class CabScheduler {
 				scheduledCab.getVersion());
 		eventQueue.add(event);
 		return timeInstant;
+	}
+
+	private String printIT(IntervalTree cabsSet) {
+		StringBuilder sb = new StringBuilder();
+		List<Interval> intall = cabsSet.searchAll(new Interval(0, 1440, null));
+		for (Interval intv : intall) {
+			Cab cab = intv.getCab();
+			sb.append(cab.getCabNo()).append(" (").append(intv.getLow())
+					.append(",").append(intv.getHigh()).append(") ");
+		}
+		return sb.toString();
 	}
 }

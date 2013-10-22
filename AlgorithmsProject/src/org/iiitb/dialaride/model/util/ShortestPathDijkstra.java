@@ -65,24 +65,26 @@ public class ShortestPathDijkstra {
 					costComparator);
 			costQueue.add(new Cost(sourceNode, 0));
 			while (!costQueue.isEmpty()) {
-				Cost costVal = costQueue.remove();				
+				Cost costVal = costQueue.remove();
 				int src = costVal.getNodeNumber();
 				if (!visited[src]) {
 					visited[src] = true;
 					Node node = nodes.get(src);
 					for (Neighbour neighbour : node.getNeighbours().values()) {
-						int dest = neighbour.getNodeNumber();						
-						if (cost[sourceNode][dest] > cost[sourceNode][src]
-								+ neighbour.getDistance()) {
-							cost[sourceNode][dest] = cost[sourceNode][src]
-									+ neighbour.getDistance();
-							prev[sourceNode][dest] = src;
-							costQueue
-									.add(new Cost(dest, cost[sourceNode][dest]));
+						int dest = neighbour.getNodeNumber();
+						if (!visited[dest]) {
+							if (cost[sourceNode][dest] > cost[sourceNode][src]
+									+ neighbour.getDistance()) {
+								cost[sourceNode][dest] = cost[sourceNode][src]
+										+ neighbour.getDistance();
+								prev[sourceNode][dest] = src;
+								costQueue.add(new Cost(dest,
+										cost[sourceNode][dest]));
+							}
 						}
 					}
 				}
-			}			
+			}
 		}
 	}
 }

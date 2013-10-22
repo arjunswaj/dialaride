@@ -113,6 +113,7 @@ public class DialARideModel {
 			sb.append("\n");
 		}
 
+		
 		sb.append("\nPaths:\n");
 		for (int idx1 = 0; idx1 < nodes.size(); idx1 += 1) {
 			for (int idx2 = 0; idx2 < nodes.size(); idx2 += 1) {
@@ -145,8 +146,9 @@ public class DialARideModel {
 				sb.append("\n");
 			}
 			sb.append("\n");
+			
 		}
-
+		 
 		return sb.toString();
 	}
 }

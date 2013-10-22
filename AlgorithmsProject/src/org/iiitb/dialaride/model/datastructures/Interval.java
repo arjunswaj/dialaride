@@ -27,7 +27,7 @@ public class Interval implements Comparable<Interval> {
 	}
 
 	public int hashCode() {
-		return (int)low;
+		return low;
 	}
 
 	public int compareTo(final Interval other) {
@@ -71,4 +71,5 @@ public class Interval implements Comparable<Interval> {
 		this.cab = cab;
 	}
 
+	
 }

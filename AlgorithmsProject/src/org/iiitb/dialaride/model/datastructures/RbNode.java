@@ -1,13 +1,12 @@
 package org.iiitb.dialaride.model.datastructures;
 
 public class RbNode {
-	public final double key;
+	public final int key;
 	public boolean color;
 	public RbNode parent;
 	public RbNode left;
 	public RbNode right;
-
-	public boolean deleted = false;
+	boolean deleted = false;
 
 	public static boolean BLACK = false;
 	public static boolean RED = true;
@@ -18,7 +17,7 @@ public class RbNode {
 		// construction of the NIL node.
 	}
 
-	public RbNode(double key) {
+	public RbNode(int key) {
 		this.parent = NIL;
 		this.left = NIL;
 		this.right = NIL;

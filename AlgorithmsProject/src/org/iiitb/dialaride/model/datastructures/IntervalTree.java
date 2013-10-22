@@ -96,7 +96,7 @@ public class IntervalTree {
 
 	// Returns all matches as a list of Intervals
 	public List<Interval> searchAll(Interval interval) {
-		// System.out.println("\n\nStarting search for " + interval);
+		// System.out.println("Starting search for " + interval);
 
 		if (tree.root().isNull()) {
 			return new ArrayList<Interval>();
@@ -114,7 +114,7 @@ public class IntervalTree {
 			results.add(getInterval(node));
 			// System.out.println("match");
 		} else {
-			// System.out.println("mismatch, isDeleted:" + node.isDeleted());
+			// System.out.println("mismatch");
 		}
 
 		if (canOverlapOnLeftSide(interval, node)) {
@@ -125,55 +125,6 @@ public class IntervalTree {
 			results.addAll(_searchAll(interval, node.right));
 		}
 
-		return results;
-	}
-
-	public void softDelete(Interval interval, int intervalCount) {
-		List<IntervalNode> intervals = searchAllIntervalNodesForSoftDelete(
-				interval, tree.root());
-		IntervalNode intNode = intervals.get(intervalCount);
-		intNode.getRbNode().setDeleted(true);
-	}
-
-	public void softDelete(Interval interval) {
-		Cab cab = interval.getCab();
-		List<IntervalNode> intervals = searchAllIntervalNodesForSoftDelete(
-				interval, tree.root());
-		for (IntervalNode intval : intervals) {
-			Cab retCab = intval.getInterval().getCab();
-			if ((retCab.getCabNo() == cab.getCabNo())) {
-				intval.getRbNode().setDeleted(true);
-				System.out.println("Deleted Baby. YAY!");
-				break;
-			}
-		}
-	}
-
-	private List<IntervalNode> searchAllIntervalNodesForSoftDelete(
-			Interval interval, RbNode node) {
-		assert (!node.isNull());
-
-		List<IntervalNode> results = new ArrayList<IntervalNode>();
-		// if (null != node && null != getInterval(node)) {
-		// System.out.println("Looking at " + getInterval(node));
-		if (getInterval(node).overlaps(interval) && !node.isDeleted()) {
-			results.add(new IntervalNode(getInterval(node), node));
-			// System.out.println("match in deleted");
-		} else {
-			// System.out.println("mismatch in deleted, isDeleted:" +
-			// node.isDeleted());
-		}
-
-		if (canOverlapOnLeftSide(interval, node)) {
-			results.addAll(searchAllIntervalNodesForSoftDelete(interval,
-					node.left));
-		}
-
-		if (canOverlapOnRightSide(interval, node)) {
-			results.addAll(searchAllIntervalNodesForSoftDelete(interval,
-					node.right));
-		}
-		// }
 		return results;
 	}
 
@@ -193,7 +144,7 @@ public class IntervalTree {
 		return (this.max.get(node)).intValue();
 	}
 
-	private void setMax(RbNode node, Integer value) {
+	private void setMax(RbNode node, int value) {
 		this.max.put(node, new Integer(value));
 	}
 
@@ -204,7 +155,7 @@ public class IntervalTree {
 		return (this.min.get(node)).intValue();
 	}
 
-	private void setMin(RbNode node, Integer value) {
+	private void setMin(RbNode node, int value) {
 		this.min.put(node, new Integer(value));
 	}
 
@@ -219,14 +170,14 @@ public class IntervalTree {
 							getInterval(node).getLow()));
 		}
 
-		private Integer max(Integer x, Integer y) {
+		private int max(int x, int y) {
 			if (x > y) {
 				return x;
 			}
 			return y;
 		}
 
-		private Integer min(Integer x, Integer y) {
+		private int min(int x, int y) {
 			if (x < y) {
 				return x;
 			}
@@ -264,27 +215,75 @@ public class IntervalTree {
 				&& hasCorrectMinFields(node.left) && hasCorrectMinFields(node.right));
 	}
 
-	private Integer getRealMax(RbNode node) {
+	private int getRealMax(RbNode node) {
 		if (node.isNull())
 			return Integer.MIN_VALUE;
-		Integer leftMax = getRealMax(node.left);
-		Integer rightMax = getRealMax(node.right);
-		Integer nodeHigh = getInterval(node).getHigh();
+		int leftMax = getRealMax(node.left);
+		int rightMax = getRealMax(node.right);
+		int nodeHigh = getInterval(node).getHigh();
 
-		Integer max1 = (leftMax > rightMax ? leftMax : rightMax);
+		int max1 = (leftMax > rightMax ? leftMax : rightMax);
 		return (max1 > nodeHigh ? max1 : nodeHigh);
 	}
 
-	private Integer getRealMin(RbNode node) {
+	private int getRealMin(RbNode node) {
 		if (node.isNull())
 			return Integer.MAX_VALUE;
 
-		Integer leftMin = getRealMin(node.left);
-		Integer rightMin = getRealMin(node.right);
-		Integer nodeLow = getInterval(node).getLow();
+		int leftMin = getRealMin(node.left);
+		int rightMin = getRealMin(node.right);
+		int nodeLow = getInterval(node).getLow();
 
-		Integer min1 = (leftMin < rightMin ? leftMin : rightMin);
+		int min1 = (leftMin < rightMin ? leftMin : rightMin);
 		return (min1 < nodeLow ? min1 : nodeLow);
+	}
+
+	public void softDelete(Interval interval) {
+		Cab cab = interval.getCab();
+		List<IntervalNode> intervals = searchAllIntervalNodesForSoftDelete(
+				interval, tree.root());
+		for (IntervalNode intval : intervals) {
+			Cab retCab = intval.getInterval().getCab();
+			if ((retCab.getCabNo() == cab.getCabNo())) {
+				intval.getRbNode().setDeleted(true);
+				System.out.println("Deleted Baby. YAY!");				
+			}
+		}
+	}
+
+	public void softDelete(Interval interval, int intervalCount) {
+		List<IntervalNode> intervals = searchAllIntervalNodesForSoftDelete(
+				interval, tree.root());
+		IntervalNode intNode = intervals.get(intervalCount);
+		intNode.getRbNode().setDeleted(true);
+	}
+
+	private List<IntervalNode> searchAllIntervalNodesForSoftDelete(
+			Interval interval, RbNode node) {
+		assert (!node.isNull());
+
+		List<IntervalNode> results = new ArrayList<IntervalNode>();
+		// if (null != node && null != getInterval(node)) {
+		// System.out.println("Looking at " + getInterval(node));
+		if (getInterval(node).overlaps(interval) && !node.isDeleted()) {
+			results.add(new IntervalNode(getInterval(node), node));
+			// System.out.println("match in deleted");
+		} else {
+			// System.out.println("mismatch in deleted, isDeleted:" +
+			// node.isDeleted());
+		}
+
+		if (canOverlapOnLeftSide(interval, node)) {
+			results.addAll(searchAllIntervalNodesForSoftDelete(interval,
+					node.left));
+		}
+
+		if (canOverlapOnRightSide(interval, node)) {
+			results.addAll(searchAllIntervalNodesForSoftDelete(interval,
+					node.right));
+		}
+		// }
+		return results;
 	}
 
 }
