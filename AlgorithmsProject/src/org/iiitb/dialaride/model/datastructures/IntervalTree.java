@@ -1,289 +1,314 @@
 package org.iiitb.dialaride.model.datastructures;
 
-/** An implementation of an interval tree, following the explanation.
- * from CLR.
- */
-
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.Queue;
 
 import org.iiitb.dialaride.model.bean.Cab;
 
-class IntervalNode {
-	Interval interval;
-	RbNode rbNode;
+public class IntervalTree<Value extends Interval> {
 
-	public IntervalNode(Interval interval, RbNode rbNode) {
-		super();
-		this.interval = interval;
-		this.rbNode = rbNode;
+	private static final boolean RED = true;
+	private static final boolean BLACK = false;
+
+	private IntervalNode root; // root of the BST
+
+	// BST helper node data type
+	private class IntervalNode {
+		private Value val; // associated data
+		private IntervalNode left, right; // links to left and right subtrees
+		private boolean color; // color of parent link
+		private int N; // subtree count
+
+		public IntervalNode(Value val, boolean color, int N) {
+			this.val = val;
+			this.color = color;
+			this.N = N;
+		}
+
+		public String toString() {
+			return val.toString();
+		}
 	}
 
-	public Interval getInterval() {
-		return interval;
+	/*************************************************************************
+	 * IntervalNode helper methods
+	 *************************************************************************/
+	// is node x red; false if x is null ?
+	private boolean isRed(IntervalNode x) {
+		if (x == null)
+			return false;
+		return (x.color == RED);
 	}
 
-	public RbNode getRbNode() {
-		return rbNode;
+	// number of node in subtree rooted at x; 0 if x is null
+	private int size(IntervalNode x) {
+		if (x == null)
+			return 0;
+		return x.N;
 	}
 
-}
+	/*************************************************************************
+	 * Size methods
+	 *************************************************************************/
 
-public class IntervalTree {
-	private final StatisticUpdate updater;
-	private final RbTree tree;
-
-	private final Map<RbNode, Interval> intervals;
-	private final Map<RbNode, Integer> max;
-	private final Map<RbNode, Integer> min;
-
-	public IntervalTree() {
-		this.updater = new IntervalTreeStatisticUpdate();
-		this.tree = new RbTree(this.updater);
-
-		this.intervals = new WeakHashMap<RbNode, Interval>();
-		this.intervals.put(RbNode.NIL, null);
-
-		this.max = new WeakHashMap<RbNode, Integer>();
-		this.max.put(RbNode.NIL, new Integer(Integer.MIN_VALUE));
-		this.min = new WeakHashMap<RbNode, Integer>();
-		this.min.put(RbNode.NIL, new Integer(Integer.MAX_VALUE));
-	}
-
-	public void insert(Interval interval) {
-		RbNode node = new RbNode(interval.getLow());
-		this.intervals.put(node, interval);
-		this.tree.insert(node);
-	}
-
+	// return number of key-value pairs in this symbol table
 	public int size() {
-		return this.tree.size();
+		return size(root);
 	}
 
-	// Returns the first matching interval that we can find.
-	public Interval search(Interval interval) {
+	// is this symbol table empty?
+	public boolean isEmpty() {
+		return root == null;
+	}
 
-		RbNode node = tree.root();
-		if (node.isNull())
-			return null;
+	/*************************************************************************
+	 * Red-black insertion
+	 *************************************************************************/
 
-		while ((!node.isNull()) && (!getInterval(node).overlaps(interval))) {
-			if (canOverlapOnLeftSide(interval, node)) {
-				node = node.left;
-			} else if (canOverlapOnRightSide(interval, node)) {
-				node = node.right;
-			} else {
-				return null;
-			}
+	// insert the key-value pair; overwrite the old value with the new value
+	// if the key is already present
+	public void add(Value val) {
+		root = add(root, val);
+		root.color = BLACK;
+	}
+
+	// insert the key-value pair in the subtree rooted at h
+	private IntervalNode add(IntervalNode h, Value val) {
+		if (h == null) {
+			val.setMax(val.getEnd());
+			IntervalNode node = new IntervalNode(val, RED, 1);
+			return node;
 		}
 
-		// Defensive coding. node can be the NIL node, but it must
-		// not be itself the null object.
-		assert node != null;
-		return getInterval(node);
-	}
-
-	private boolean canOverlapOnLeftSide(Interval interval, RbNode node) {
-		return (!node.left.isNull()) && getMax(node.left) >= interval.getLow();
-	}
-
-	private boolean canOverlapOnRightSide(Interval interval, RbNode node) {
-		return (!node.right.isNull())
-				&& getMin(node.right) <= interval.getHigh();
-	}
-
-	// Returns all matches as a list of Intervals
-	public List<Interval> searchAll(Interval interval) {
-		// System.out.println("Starting search for " + interval);
-
-		if (tree.root().isNull()) {
-			return new ArrayList<Interval>();
+		int cmp = val.getStart() - h.val.getStart();
+		if (cmp <= 0) {
+			h.left = add(h.left, val);
+		} else if (cmp > 0) {
+			h.right = add(h.right, val);
 		}
-		return this._searchAll(interval, tree.root());
+		// else h.val = val;
+		int maxVal = findMaxVal(h.left, h.right, val.getEnd());
+		h.val.setMax(maxVal);
+
+		// fix-up any right-leaning links
+		if (isRed(h.right) && !isRed(h.left))
+			h = rotateLeft(h);
+		if (isRed(h.left) && isRed(h.left.left))
+			h = rotateRight(h);
+		if (isRed(h.left) && isRed(h.right))
+			flipColors(h);
+		h.N = size(h.left) + size(h.right) + 1;
+		return h;
 	}
 
-	private List<Interval> _searchAll(Interval interval, RbNode node) {
-		assert (!node.isNull());
-
-		// System.out.println("Looking at " + getInterval(node));
-
-		List<Interval> results = new ArrayList<Interval>();
-		if (getInterval(node).overlaps(interval) && !node.isDeleted()) {
-			results.add(getInterval(node));
-			// System.out.println("match");
+	private int findMaxVal(IntervalNode left, IntervalNode right, int end) {
+		int maxVal = 0;
+		int leftVal = 0;
+		int rightVal = 0;
+		if (null == left) {
+			leftVal = Integer.MIN_VALUE;
 		} else {
-			// System.out.println("mismatch");
+			leftVal = left.val.getMax();
+		}
+		if (null == right) {
+			rightVal = Integer.MIN_VALUE;
+		} else {
+			rightVal = right.val.getMax();
 		}
 
-		if (canOverlapOnLeftSide(interval, node)) {
-			results.addAll(_searchAll(interval, node.left));
+		if (leftVal >= rightVal && leftVal >= end) {
+			maxVal = leftVal;
+		} else if (rightVal >= leftVal && rightVal >= end) {
+			maxVal = rightVal;
+		} else if (end >= leftVal && end >= rightVal) {
+			maxVal = end;
 		}
-
-		if (canOverlapOnRightSide(interval, node)) {
-			results.addAll(_searchAll(interval, node.right));
-		}
-
-		return results;
-	}
-
-	public Interval getInterval(RbNode node) {
-		assert (node != null);
-		assert (!node.isNull());
-
-		assert (this.intervals.containsKey(node));
-
-		return this.intervals.get(node);
-	}
-
-	public int getMax(RbNode node) {
-		assert (node != null);
-		assert (this.intervals.containsKey(node));
-
-		return (this.max.get(node)).intValue();
-	}
-
-	private void setMax(RbNode node, int value) {
-		this.max.put(node, new Integer(value));
-	}
-
-	public int getMin(RbNode node) {
-		assert (node != null);
-		assert (this.intervals.containsKey(node));
-
-		return (this.min.get(node)).intValue();
-	}
-
-	private void setMin(RbNode node, int value) {
-		this.min.put(node, new Integer(value));
-	}
-
-	private class IntervalTreeStatisticUpdate implements StatisticUpdate {
-		public void update(RbNode node) {
-			setMax(node,
-					max(max(getMax(node.left), getMax(node.right)),
-							getInterval(node).getHigh()));
-
-			setMin(node,
-					min(min(getMin(node.left), getMin(node.right)),
-							getInterval(node).getLow()));
-		}
-
-		private int max(int x, int y) {
-			if (x > y) {
-				return x;
-			}
-			return y;
-		}
-
-		private int min(int x, int y) {
-			if (x < y) {
-				return x;
-			}
-			return y;
-		}
+		return maxVal;
 
 	}
 
-	/**
-	 * 
-	 * Test case code: check to see that the data structure follows the right
-	 * constraints of interval trees:
-	 * 
-	 * o. They're valid red-black trees o. getMax(node) is the maximum of any
-	 * interval rooted at that node..
-	 * 
-	 * This code is expensive, and only meant to be used for assertions and
-	 * testing.
-	 */
-	public boolean isValid() {
-		return (this.tree.isValid() && hasCorrectMaxFields(this.tree.root) && hasCorrectMinFields(this.tree.root));
-	}
-
-	private boolean hasCorrectMaxFields(RbNode node) {
-		if (node.isNull())
-			return true;
-		return (getRealMax(node) == getMax(node)
-				&& hasCorrectMaxFields(node.left) && hasCorrectMaxFields(node.right));
-	}
-
-	private boolean hasCorrectMinFields(RbNode node) {
-		if (node.isNull())
-			return true;
-		return (getRealMin(node) == getMin(node)
-				&& hasCorrectMinFields(node.left) && hasCorrectMinFields(node.right));
-	}
-
-	private int getRealMax(RbNode node) {
-		if (node.isNull())
-			return Integer.MIN_VALUE;
-		int leftMax = getRealMax(node.left);
-		int rightMax = getRealMax(node.right);
-		int nodeHigh = getInterval(node).getHigh();
-
-		int max1 = (leftMax > rightMax ? leftMax : rightMax);
-		return (max1 > nodeHigh ? max1 : nodeHigh);
-	}
-
-	private int getRealMin(RbNode node) {
-		if (node.isNull())
-			return Integer.MAX_VALUE;
-
-		int leftMin = getRealMin(node.left);
-		int rightMin = getRealMin(node.right);
-		int nodeLow = getInterval(node).getLow();
-
-		int min1 = (leftMin < rightMin ? leftMin : rightMin);
-		return (min1 < nodeLow ? min1 : nodeLow);
+	public Iterable<Value> keys() {
+		Queue<Value> queue = new LinkedList<Value>();
+		keys(root, queue);
+		return queue;
 	}
 
 	public void softDelete(Interval interval) {
-		Cab cab = interval.getCab();
-		List<IntervalNode> intervals = searchAllIntervalNodesForSoftDelete(
-				interval, tree.root());
-		for (IntervalNode intval : intervals) {
-			Cab retCab = intval.getInterval().getCab();
-			if ((retCab.getCabNo() == cab.getCabNo())) {
-				intval.getRbNode().setDeleted(true);
-				System.out.println("Deleted Baby. YAY!");				
+		int ctr = 0;
+
+		Cab intervalCab = interval.getCab();
+		Iterable<Interval> intervals = keys(interval);
+		for (Interval intval : intervals) {
+			Cab matchedIntervalCab = intval.getCab();			
+			if (matchedIntervalCab.getCabNo() == intervalCab.getCabNo()) {
+				intval.setDeleted(true);
+				//System.out.println("Deleted Baby. YAY! " + interval.getCab());
+				ctr += 1;
 			}
 		}
+		if (ctr == 0) {
+			//System.out.println("None Deleted!: " + interval.getCab());
+			intervals = keys(interval);
+		}
 	}
 
-	public void softDelete(Interval interval, int intervalCount) {
-		List<IntervalNode> intervals = searchAllIntervalNodesForSoftDelete(
-				interval, tree.root());
-		IntervalNode intNode = intervals.get(intervalCount);
-		intNode.getRbNode().setDeleted(true);
+	public Iterable<Interval> keys(Interval interval) {
+		Queue<Interval> queue = new LinkedList<Interval>();
+		Queue<IntervalNode> nodes = new LinkedList<IntervalTree<Value>.IntervalNode>();
+
+		if (null != root) {
+			nodes.add(root);
+		}
+		while (!nodes.isEmpty()) {
+			IntervalNode node = nodes.remove();
+			if (doesItOverlaps(node, interval)) {
+				if (!node.val.isDeleted()) {
+					queue.add(node.val);
+				}
+				
+			} 
+			addLeftNode(nodes, node, interval);
+			addRightNode(nodes, node, interval);
+		}
+
+		return queue;
 	}
 
-	private List<IntervalNode> searchAllIntervalNodesForSoftDelete(
-			Interval interval, RbNode node) {
-		assert (!node.isNull());
-
-		List<IntervalNode> results = new ArrayList<IntervalNode>();
-		// if (null != node && null != getInterval(node)) {
-		// System.out.println("Looking at " + getInterval(node));
-		if (getInterval(node).overlaps(interval) && !node.isDeleted()) {
-			results.add(new IntervalNode(getInterval(node), node));
-			// System.out.println("match in deleted");
-		} else {
-			// System.out.println("mismatch in deleted, isDeleted:" +
-			// node.isDeleted());
+	private boolean addLeftNode(Queue<IntervalNode> nodes, IntervalNode node,
+			Interval interval) {
+		boolean added = false;
+		if (null != node.left && node.left.val.getMax() >= interval.getStart()) {
+			nodes.add(node.left);
+			added = true;
 		}
+		return added;
+	}
 
-		if (canOverlapOnLeftSide(interval, node)) {
-			results.addAll(searchAllIntervalNodesForSoftDelete(interval,
-					node.left));
+	private boolean addRightNode(Queue<IntervalNode> nodes, IntervalNode node,
+			Interval interval) {
+		boolean added = false;
+		if (null != node.right) {
+			nodes.add(node.right);
+			added = true;
 		}
+		return added;
+	}
 
-		if (canOverlapOnRightSide(interval, node)) {
-			results.addAll(searchAllIntervalNodesForSoftDelete(interval,
-					node.right));
+	private boolean doesItOverlaps(IntervalNode node, Interval interval) {
+		boolean stat = true;
+		// System.out.println("Exploring IntervalNode: " + node);
+		if (interval.getEnd() < node.val.getStart()) {
+			// System.out.println("Interval (" + interval +
+			// ") Ends before IntervalNode ("
+			// + node.val + ") Starts");
+			stat = false;
+		} else if (interval.getStart() > node.val.getEnd()) {
+			// System.out.println("Interval (" + interval +
+			// ") Starts after IntervalNode ("
+			// + node.val + ") Ends");
+			stat = false;
 		}
-		// }
-		return results;
+		return stat;
+	}
+
+	private void keys(IntervalNode h, Queue<Value> queue) {
+		if (null == h) {
+			return;
+		}
+		keys(h.left, queue);
+		queue.add(h.val);
+		keys(h.right, queue);
+	}
+
+	/*************************************************************************
+	 * red-black tree helper functions
+	 *************************************************************************/
+
+	// make a left-leaning link lean to the right
+	private IntervalNode rotateRight(IntervalNode h) {
+		assert (h != null) && isRed(h.left);
+		IntervalNode x = h.left;
+		h.left = x.right;
+		x.right = h;
+		x.color = x.right.color;
+		x.right.color = RED;
+		x.N = h.N;
+		h.N = size(h.left) + size(h.right) + 1;
+
+		h.val.setMax(findMaxVal(h.left, h.right, h.val.getEnd()));
+		x.val.setMax(findMaxVal(x.left, x.right, x.val.getEnd()));
+
+		return x;
+	}
+
+	// make a right-leaning link lean to the left
+	private IntervalNode rotateLeft(IntervalNode h) {
+		assert (h != null) && isRed(h.right);
+		IntervalNode x = h.right;
+		h.right = x.left;
+		x.left = h;
+		x.color = x.left.color;
+		x.left.color = RED;
+		x.N = h.N;
+		h.N = size(h.left) + size(h.right) + 1;
+
+		h.val.setMax(findMaxVal(h.left, h.right, h.val.getEnd()));
+		x.val.setMax(findMaxVal(x.left, x.right, x.val.getEnd()));
+
+		return x;
+	}
+
+	// flip the colors of a node and its two children
+	private void flipColors(IntervalNode h) {
+		// h must have opposite color of its two children
+		assert (h != null) && (h.left != null) && (h.right != null);
+		assert (!isRed(h) && isRed(h.left) && isRed(h.right))
+				|| (isRed(h) && !isRed(h.left) && !isRed(h.right));
+		h.color = !h.color;
+		h.left.color = !h.left.color;
+		h.right.color = !h.right.color;
+	}
+
+	// Assuming that h is red and both h.left and h.left.left
+	// are black, make h.left or one of its children red.
+	private IntervalNode moveRedLeft(IntervalNode h) {
+		assert (h != null);
+		assert isRed(h) && !isRed(h.left) && !isRed(h.left.left);
+
+		flipColors(h);
+		if (isRed(h.right.left)) {
+			h.right = rotateRight(h.right);
+			h = rotateLeft(h);
+		}
+		return h;
+	}
+
+	// Assuming that h is red and both h.right and h.right.left
+	// are black, make h.right or one of its children red.
+	private IntervalNode moveRedRight(IntervalNode h) {
+		assert (h != null);
+		assert isRed(h) && !isRed(h.right) && !isRed(h.right.left);
+		flipColors(h);
+		if (isRed(h.left.left)) {
+			h = rotateRight(h);
+		}
+		return h;
+	}
+
+	// restore red-black tree invariant
+	private IntervalNode balance(IntervalNode h) {
+		assert (h != null);
+
+		if (isRed(h.right))
+			h = rotateLeft(h);
+		if (isRed(h.left) && isRed(h.left.left))
+			h = rotateRight(h);
+		if (isRed(h.left) && isRed(h.right))
+			flipColors(h);
+
+		h.N = size(h.left) + size(h.right) + 1;
+		return h;
 	}
 
 }

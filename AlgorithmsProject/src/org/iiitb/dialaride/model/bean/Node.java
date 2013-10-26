@@ -32,7 +32,7 @@ public class Node {
 	 */
 	private Map<Integer, List<Neighbour>> bestRoutes = new HashMap<Integer, List<Neighbour>>();
 
-	private IntervalTree cabsSet = new IntervalTree();
+	private IntervalTree<Interval> cabsSet = new IntervalTree<Interval>();
 
 	public Node(int nodeNumber) {
 		super();
@@ -72,27 +72,20 @@ public class Node {
 		this.neighbours = neighbours;
 	}
 
-	public IntervalTree getCabsSet() {
+	public IntervalTree<Interval> getCabsSet() {
 		return cabsSet;
 	}
 
-	public void setCabsSet(IntervalTree cabsSet) {
+	public void setCabsSet(IntervalTree<Interval> cabsSet) {
 		this.cabsSet = cabsSet;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("Node No: ").append(nodeNumber)
-				.append("\n\tCopy 1: Adj (Node No, Distance): ");
+		sb.append("Node No: ").append(nodeNumber);
 
-		for (Integer nodeNo : neighbours.keySet()) {
-			Neighbour neighbour = neighbours.get(nodeNo);
-			sb.append("(").append(neighbour.getNodeNumber()).append(", ")
-					.append(neighbour.getDistance()).append(") ");
-		}
-
-		sb.append("\n\tCopy 2: Adj (Node No, Distance): ");
+		sb.append("\n\tAdj (Node No, Distance): ");
 		for (Integer dist : adjacentNodes.keySet()) {
 			List<Neighbour> neighbours = adjacentNodes.get(dist);
 			for (Neighbour neighbour : neighbours) {
@@ -106,11 +99,11 @@ public class Node {
 		 * for (Cab cab : cabs) { sb.append(cab.getCabNo()).append(" "); }
 		 */
 		Interval searchInterval = new Interval(0, 1440, null);
-		List<Interval> intervals = cabsSet.searchAll(searchInterval);
+		Iterable<Interval> intervals = cabsSet.keys(searchInterval);
 		for (Interval intv: intervals) {
 			Cab cab = intv.getCab();
-			sb.append(cab.getCabNo()).append(" (").append(intv.getLow())
-					.append(",").append(intv.getHigh()).append(") ");
+			sb.append(cab.getCabNo()).append(" (").append(intv.getStart())
+					.append(",").append(intv.getEnd()).append(") ");
 		}
 		sb.append("\n");
 		return sb.toString();

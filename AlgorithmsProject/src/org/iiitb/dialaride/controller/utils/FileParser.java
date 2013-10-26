@@ -128,7 +128,7 @@ public class FileParser {
 					int t = 0;
 					for (Cab cab : cabSet) {						
 						Interval interval = new Interval(t, t + 1440, cab);
-						node.getCabsSet().insert(interval);						
+						node.getCabsSet().add(interval);						
 					}
 				}
 			}
