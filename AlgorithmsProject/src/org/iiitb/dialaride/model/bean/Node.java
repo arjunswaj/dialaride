@@ -100,10 +100,11 @@ public class Node {
 		 */
 		Interval searchInterval = new Interval(0, 1440, null);
 		Iterable<Interval> intervals = cabsSet.keys(searchInterval);
-		for (Interval intv: intervals) {
+		for (Interval intv : intervals) {
 			Cab cab = intv.getCab();
 			sb.append(cab.getCabNo()).append(" (").append(intv.getStart())
-					.append(",").append(intv.getEnd()).append(") ");
+					.append(",").append(intv.getEnd()).append(" - P: ")
+					.append(cab.getPassengers()).append(") ");
 		}
 		sb.append("\n");
 		return sb.toString();

@@ -18,8 +18,10 @@ public class Event implements Comparable<Event> {
 
 	private int version;
 
+	private int dropCounts;
+
 	public Event(EventTypes eventType, Cab cab, RideRequest rideRequest,
-			double timeInstant, int nodeNumber, int version) {
+			double timeInstant, int nodeNumber, int version, int dropCounts) {
 		super();
 		this.eventType = eventType;
 		this.cab = cab;
@@ -27,6 +29,15 @@ public class Event implements Comparable<Event> {
 		this.timeInstant = timeInstant;
 		this.nodeNumber = nodeNumber;
 		this.version = version;
+		this.dropCounts = dropCounts;
+	}
+
+	public int getDropCounts() {
+		return dropCounts;
+	}
+
+	public void setDropCounts(int dropCounts) {
+		this.dropCounts = dropCounts;
 	}
 
 	public int getNodeNumber() {
@@ -86,6 +97,9 @@ public class Event implements Comparable<Event> {
 		double diff = this.timeInstant - o.getTimeInstant();
 		if (0 == diff) {
 			diff = eventType.getPriority() - o.getEventType().getPriority();
+		}
+		if (0 == diff) {
+			diff = -1; // A hack
 		}
 		return (int) diff;
 	}

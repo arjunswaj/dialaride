@@ -103,7 +103,7 @@ public class Cab implements Comparable<Cab> {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Cab No: ").append(cabNo).append(", Capacity: ")
 				.append(capacity).append(", Passengers: ").append(passengers)
-				.append(", Current Node: ").append(currentNode).append("\n");
+				.append("");
 		return sb.toString();
 	}
 
