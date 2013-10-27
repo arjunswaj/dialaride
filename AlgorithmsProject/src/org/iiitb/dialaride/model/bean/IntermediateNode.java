@@ -6,6 +6,8 @@ public class IntermediateNode {
 
 	private int dropCount;
 
+	private int dist;
+
 	public int getNodeNumber() {
 		return nodeNumber;
 	}
@@ -22,10 +24,19 @@ public class IntermediateNode {
 		this.dropCount = dropCount;
 	}
 
-	public IntermediateNode(int nodeNumber, int dropCount) {
+	public int getDist() {
+		return dist;
+	}
+
+	public void setDist(int dist) {
+		this.dist = dist;
+	}
+
+	public IntermediateNode(int nodeNumber, int dropCount, int dist) {
 		super();
 		this.nodeNumber = nodeNumber;
 		this.dropCount = dropCount;
+		this.dist = dist;
 	}
 
 }

@@ -24,6 +24,8 @@ import org.iiitb.dialaride.model.datastructures.consts.SchedulerConstants;
 
 public class CabScheduler {
 
+	int totalTravelled = 0;
+	
 	public void schedule(DialARideModel model) {
 		int successfulScheduling = 0;
 		int rejectedReqs = 0;
@@ -115,6 +117,7 @@ public class CabScheduler {
 		System.out.println("Successfully scheduled: " + successfulScheduling
 				+ "\nRejected Requests: " + rejectedReqs + "\nRevenue: "
 				+ revenue);
+		System.out.println("Total travelled: " + totalTravelled);
 	}
 
 	private void handleStaleEvents(DialARideModel model, Event event) {
@@ -300,7 +303,7 @@ public class CabScheduler {
 		}
 
 		if (isSubPath) {
-			// Do Scheduling & delete entry in PQ
+			// Do Scheduling & invalidate entry in PQ
 			System.out.println("Sub Path found while Dropping 1");
 
 			doThePickupWhileServingSomeoneAndServeAll(model, model.getNodes(),
@@ -351,7 +354,9 @@ public class CabScheduler {
 			int[][] costMatrix = model.getCost();
 			int distFromSrcToNode = costMatrix[sourceOfVehicle][pickUpDestination];
 			actualArrivalTimeOfCab += (distFromSrcToNode * SchedulerConstants.MINUTES_PER_KM);
-
+			
+			totalTravelled += distFromSrcToNode;
+			
 			scheduledCab.setCurrentNode(pickUpDestination);
 			// Present only for an instant to pick up
 			Node pickUpNode = model.getNodes().get(pickUpDestination);
@@ -367,9 +372,14 @@ public class CabScheduler {
 			eventQueue.add(event);
 		}
 
+		int ctr = 0;
 		List<IntermediateNode> intermediateNodes = new ArrayList<IntermediateNode>();
 		for (IntermediateNode intermed : scheduledCab.getPath()) {
 			intermediateNodes.add(intermed);
+			if ((ctr != 0) && !cabFoundInSrc) {
+				totalTravelled -= intermed.getDist();				
+			}
+			ctr += 1;
 		}
 		scheduledCab.getPath().clear();
 
@@ -417,6 +427,9 @@ public class CabScheduler {
 //					+ (interval.getStart() - (int) Math.ceil(currentTime));
 			int[][] costMatrix = model.getCost();
 			int distFromSrcToNode = costMatrix[sourceOfVehicle][pickUpDestination];
+			
+			totalTravelled += distFromSrcToNode;
+			
 			actualArrivalTimeOfCab += (distFromSrcToNode * SchedulerConstants.MINUTES_PER_KM);
 
 			scheduledCab.setCurrentNode(pickUpDestination);
@@ -433,10 +446,15 @@ public class CabScheduler {
 			
 			eventQueue.add(event);
 		}
-
+		
+		int ctr = 0;
 		List<IntermediateNode> intermediateNodes = new ArrayList<IntermediateNode>();
 		for (IntermediateNode intermed : scheduledCab.getPath()) {
 			intermediateNodes.add(intermed);
+			if ((ctr != 0) && !cabFoundInSrc) {
+				totalTravelled -= intermed.getDist();				
+			}
+			ctr += 1;
 		}
 		scheduledCab.getPath().clear();
 
@@ -518,6 +536,8 @@ public class CabScheduler {
 			if (null != neighbour) {
 				val = neighbour.getDistance();
 			}
+			
+			totalTravelled += val;
 			double timeReq = val * SchedulerConstants.MINUTES_PER_KM;
 			timeInstant += timeReq;
 			Node pickUpNode = model.getNodes().get(dest);
@@ -529,12 +549,12 @@ public class CabScheduler {
 				event = new Event(EventTypes.REACHED_TARGET_NODE, scheduledCab,
 						rideRequest, Math.ceil(timeInstant), dest,
 						scheduledCab.getVersion(), 1);
-				scheduledCab.getPath().add(new IntermediateNode(dest, 1));
+				scheduledCab.getPath().add(new IntermediateNode(dest, 1, val));
 			} else {
 				event = new Event(EventTypes.REACHED_NODE, scheduledCab,
 						rideRequest, Math.ceil(timeInstant), dest,
 						scheduledCab.getVersion(), 0);
-				scheduledCab.getPath().add(new IntermediateNode(dest, 0));
+				scheduledCab.getPath().add(new IntermediateNode(dest, 0, val));
 			}
 
 			
@@ -580,6 +600,7 @@ public class CabScheduler {
 			}
 			double timeReq = val * SchedulerConstants.MINUTES_PER_KM;
 			timeInstant += timeReq;
+			totalTravelled += val;
 			Node pickUpNode = model.getNodes().get(dest);
 			pickUpNode.getCabsSet().add(
 					new Interval((int) Math.ceil(timeInstant), (int) Math
@@ -596,12 +617,12 @@ public class CabScheduler {
 							dest, scheduledCab.getVersion(), dropCount);
 				}
 				scheduledCab.getPath().add(
-						new IntermediateNode(dest, dropCount));
+						new IntermediateNode(dest, dropCount, val));
 			} else {
 				event = new Event(EventTypes.REACHED_NODE, scheduledCab, null,
 						Math.ceil(timeInstant), dest,
 						scheduledCab.getVersion(), 0);
-				scheduledCab.getPath().add(new IntermediateNode(dest, 0));
+				scheduledCab.getPath().add(new IntermediateNode(dest, 0, val));
 			}
 
 			
@@ -642,6 +663,8 @@ public class CabScheduler {
 			if (null != neighbour) {
 				val = neighbour.getDistance();
 			}
+			
+			totalTravelled += val;
 			double timeReq = val * SchedulerConstants.MINUTES_PER_KM;
 			timeInstant += timeReq;
 			src = dest;
