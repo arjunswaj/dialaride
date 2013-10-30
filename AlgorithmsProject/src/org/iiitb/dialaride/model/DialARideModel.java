@@ -9,6 +9,7 @@ import java.util.Stack;
 import org.iiitb.dialaride.model.bean.Cab;
 import org.iiitb.dialaride.model.bean.Neighbour;
 import org.iiitb.dialaride.model.bean.Node;
+import org.iiitb.dialaride.model.bean.Path;
 import org.iiitb.dialaride.model.bean.RideRequest;
 
 public class DialARideModel {
@@ -28,16 +29,20 @@ public class DialARideModel {
 	 */
 	private SortedMap<Integer, List<RideRequest>> rideRequests;
 
+	private Map<Integer, List<Path>> cabPath;
+
 	private int[][] cost;
 
 	private int[][] prev;
 
 	public DialARideModel(Map<Integer, Set<Cab>> cabs, List<Node> nodes,
-			SortedMap<Integer, List<RideRequest>> rideRequests) {
+			SortedMap<Integer, List<RideRequest>> rideRequests,
+			Map<Integer, List<Path>> cabPath) {
 		super();
 		this.cabs = cabs;
 		this.nodes = nodes;
 		this.rideRequests = rideRequests;
+		this.cabPath = cabPath;
 		cost = new int[nodes.size()][nodes.size()];
 		prev = new int[nodes.size()][nodes.size()];
 	}
@@ -83,6 +88,14 @@ public class DialARideModel {
 		this.prev = prev;
 	}
 
+	public Map<Integer, List<Path>> getCabPath() {
+		return cabPath;
+	}
+
+	public void setCabPath(Map<Integer, List<Path>> cabPath) {
+		this.cabPath = cabPath;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -113,7 +126,6 @@ public class DialARideModel {
 			sb.append("\n");
 		}
 
-		
 		sb.append("\nPaths:\n");
 		for (int idx1 = 0; idx1 < nodes.size(); idx1 += 1) {
 			for (int idx2 = 0; idx2 < nodes.size(); idx2 += 1) {
@@ -146,9 +158,10 @@ public class DialARideModel {
 				sb.append("\n");
 			}
 			sb.append("\n");
-			
+
 		}
-		 
+
 		return sb.toString();
 	}
+
 }

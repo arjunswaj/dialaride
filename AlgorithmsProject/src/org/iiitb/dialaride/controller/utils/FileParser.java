@@ -19,8 +19,10 @@ import org.iiitb.dialaride.model.DialARideModel;
 import org.iiitb.dialaride.model.bean.Cab;
 import org.iiitb.dialaride.model.bean.Neighbour;
 import org.iiitb.dialaride.model.bean.Node;
+import org.iiitb.dialaride.model.bean.Path;
 import org.iiitb.dialaride.model.bean.RideRequest;
 import org.iiitb.dialaride.model.datastructures.Interval;
+import org.iiitb.dialaride.model.datastructures.consts.EventTypes;
 
 public class FileParser {
 
@@ -53,6 +55,8 @@ public class FileParser {
 			Map<Integer, Set<Cab>> cabs = new HashMap<Integer, Set<Cab>>();
 			SortedMap<Integer, List<RideRequest>> rideRequests = new TreeMap<Integer, List<RideRequest>>();
 
+			Map<Integer, List<Path>> cabPath = new HashMap<Integer, List<Path>>();
+			
 			for (int index = 0; index < numOfNodes; index += 1) {
 				Node mainNode = new Node(index);
 				line = bufferedReader.readLine();
@@ -101,6 +105,9 @@ public class FileParser {
 					cabs.put(nodeNo, cabList);
 				}
 				cabList.add(cab);
+				List<Path> pathList = new ArrayList<Path>();
+				pathList.add(new Path(nodeNo, 0, EventTypes.HOME));
+				cabPath.put(cabNo, pathList);
 			}
 
 			for (int index = 0; index < noOfRequests; index += 1) {
@@ -133,7 +140,7 @@ public class FileParser {
 				}
 			}
 
-			model = new DialARideModel(cabs, nodes, rideRequests);
+			model = new DialARideModel(cabs, nodes, rideRequests, cabPath);
 		} finally {
 			if (null != bufferedReader) {
 				bufferedReader.close();

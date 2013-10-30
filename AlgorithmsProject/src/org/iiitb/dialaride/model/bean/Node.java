@@ -98,7 +98,7 @@ public class Node {
 		/*
 		 * for (Cab cab : cabs) { sb.append(cab.getCabNo()).append(" "); }
 		 */
-		Interval searchInterval = new Interval(0, 1440, null);
+		Interval searchInterval = new Interval(0, 2880, null);
 		Iterable<Interval> intervals = cabsSet.keys(searchInterval);
 		for (Interval intv : intervals) {
 			Cab cab = intv.getCab();

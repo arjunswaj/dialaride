@@ -5,8 +5,8 @@ public enum EventTypes {
 	CUSTOMER_REQUEST(2),
 	REACHED_PICKUP_NODE(3),
 	REACHED_PARTIAL_TARGET_NODE(4),
-	REACHED_TARGET_NODE(5);
-	
+	REACHED_TARGET_NODE(5),
+	HOME(6);
 	int priority;
 	
 	
