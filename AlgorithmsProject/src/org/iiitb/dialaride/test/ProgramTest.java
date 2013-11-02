@@ -10,7 +10,7 @@ public class ProgramTest {
 	public static void main(String[] args) {
 		
 		DialARideController dialARideController = new DialARideController();
-		dialARideController.readDataFromFile("test2.txt");
+		dialARideController.readDataFromFile("data4.txt");
 	}
 
 }

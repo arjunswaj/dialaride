@@ -35,6 +35,14 @@ public class DialARideModel {
 
 	private int[][] prev;
 
+	private int maxRevenue;
+
+	private int totalDistance;
+
+	private int successfullyScheduledRequests;
+
+	private int rejectedRequests;
+
 	public DialARideModel(Map<Integer, Set<Cab>> cabs, List<Node> nodes,
 			SortedMap<Integer, List<RideRequest>> rideRequests,
 			Map<Integer, List<Path>> cabPath) {
@@ -94,6 +102,39 @@ public class DialARideModel {
 
 	public void setCabPath(Map<Integer, List<Path>> cabPath) {
 		this.cabPath = cabPath;
+	}
+
+	public int getMaxRevenue() {
+		return maxRevenue;
+	}
+
+	public void setMaxRevenue(int maxRevenue) {
+		this.maxRevenue = maxRevenue;
+	}
+
+	public int getTotalDistance() {
+		return totalDistance;
+	}
+
+	public void setTotalDistance(int totalDistance) {
+		this.totalDistance = totalDistance;
+	}
+
+	public int getSuccessfullyScheduledRequests() {
+		return successfullyScheduledRequests;
+	}
+
+	public void setSuccessfullyScheduledRequests(
+			int successfullyScheduledRequests) {
+		this.successfullyScheduledRequests = successfullyScheduledRequests;
+	}
+
+	public int getRejectedRequests() {
+		return rejectedRequests;
+	}
+
+	public void setRejectedRequests(int rejectedRequests) {
+		this.rejectedRequests = rejectedRequests;
 	}
 
 	@Override

@@ -123,10 +123,14 @@ public class CabScheduler {
 			}
 		}
 
-		System.out.println("Successfully scheduled: " + successfulScheduling
-				+ "\nRejected Requests: " + rejectedReqs + "\nRevenue: "
-				+ revenue);
-		System.out.println("Total travelled: " + totalTravelled);
+		// System.out.println("Successfully scheduled: " + successfulScheduling
+		// + "\nRejected Requests: " + rejectedReqs + "\nRevenue: "
+		// + revenue);
+		model.setSuccessfullyScheduledRequests(successfulScheduling);
+		model.setRejectedRequests(rejectedReqs);
+		model.setMaxRevenue(revenue);
+		model.setTotalDistance(totalTravelled);
+		// System.out.println("Total travelled: " + totalTravelled);
 	}
 
 	private void handleStaleEvents(DialARideModel model, Event event) {
@@ -148,13 +152,14 @@ public class CabScheduler {
 						.getTimeInstant()), cab));
 
 		cab.getPath().remove(0);
+		cab.setPassengers(cab.getPassengers() - event.getDropCounts());
 		if (!isPartial) {
 			cab.setDroppingAnyone(false);
 			cabsSet.add(new Interval((int) Math.ceil(event.getTimeInstant()),
 					2880, cab));
-			cab.setPassengers(0);
+			 //cab.setPassengers(0);
 		} else {
-			cab.setPassengers(cab.getPassengers() - event.getDropCounts());
+			// cab.setPassengers(cab.getPassengers() - event.getDropCounts());
 		}
 
 		if (0 > cab.getPassengers()) {
@@ -335,11 +340,13 @@ public class CabScheduler {
 			}
 			if (isSubPath) {
 				// Do Scheduling
+				// System.out.println("Sub Path found while Dropping 2");
+				// printPath("MyPath: ", myPath);
+				// printPathNode("ThatCabsPath: ", thatCabsPath);
 				doThePickupWhileServingSomeoneAndServeAllWhenMyStopIsLastStop(
 						model, model.getNodes(), rideRequest, eventQueue,
 						timeInstant, rideRequest.getSource(), cab,
 						node.getNodeNumber(), cabFoundInSrc, cabsSet, interval);
-				// System.out.println("Sub Path found while Dropping 2");
 			} else {
 				// System.out
 				// .println("Sub Path NOT found while Dropping, DISCARDED the cab!");
@@ -354,11 +361,32 @@ public class CabScheduler {
 			Queue<Event> eventQueue, double currentTime, int pickUpDestination,
 			Cab scheduledCab, int sourceOfVehicle, boolean cabFoundInSrc,
 			IntervalTree<Interval> cabsSet, Interval interval) {
-		int actualArrivalTimeOfCab = (int) Math.ceil(currentTime);
+		int actualArrivalTimeOfCab = (int) Math.ceil((currentTime > interval
+				.getStart()) ? currentTime : interval.getStart());
 		Interval deleteInterval = new Interval(0, 2880, scheduledCab);
 		cabsSet.softDelete(deleteInterval);
 
 		scheduledCab.setVersion(scheduledCab.getVersion() + 1);
+
+		int ctr = 0;
+		int removeCount = 0;
+		List<IntermediateNode> intermediateNodes = new ArrayList<IntermediateNode>();
+		for (IntermediateNode intermed : scheduledCab.getPath()) {
+			intermediateNodes.add(intermed);
+			if ((ctr != 0) && !cabFoundInSrc) {
+				totalTravelled -= intermed.getDist();
+			}
+			if (intermed.getDropCount() > 0) {
+				removeCount += intermed.getDropCount();
+			}
+			ctr += 1;
+		}
+		// System.out.println("Removing: " + removeCount);
+		List<Path> path = model.getCabPath().get(scheduledCab.getCabNo());
+		for (int index = 0; index < removeCount; index += 1) {
+			path.remove(path.size() - 1);
+		}
+
 		if (!cabFoundInSrc) {
 			scheduledCab.setPickingAnyone(true);
 
@@ -389,15 +417,6 @@ public class CabScheduler {
 			eventQueue.add(event);
 		}
 
-		int ctr = 0;
-		List<IntermediateNode> intermediateNodes = new ArrayList<IntermediateNode>();
-		for (IntermediateNode intermed : scheduledCab.getPath()) {
-			intermediateNodes.add(intermed);
-			if ((ctr != 0) && !cabFoundInSrc) {
-				totalTravelled -= intermed.getDist();
-			}
-			ctr += 1;
-		}
 		scheduledCab.getPath().clear();
 
 		Interval removeInterval = new Interval(0, 2880, scheduledCab);
@@ -432,11 +451,33 @@ public class CabScheduler {
 			Cab scheduledCab, int sourceOfVehicle, boolean cabFoundInSrc,
 			IntervalTree<Interval> cabsSet, Interval interval) {
 
-		int actualArrivalTimeOfCab = (int) Math.ceil(currentTime);
+		int actualArrivalTimeOfCab = (int) Math.ceil((currentTime > interval
+				.getStart()) ? currentTime : interval.getStart());
 		Interval deleteInterval = new Interval(0, 2880, scheduledCab);
 		cabsSet.softDelete(deleteInterval);
 
 		scheduledCab.setVersion(scheduledCab.getVersion() + 1);
+
+		int ctr = 0;
+		int removeCount = 0;
+		List<IntermediateNode> intermediateNodes = new ArrayList<IntermediateNode>();
+		for (IntermediateNode intermed : scheduledCab.getPath()) {
+			intermediateNodes.add(intermed);
+			if ((ctr != 0) && !cabFoundInSrc) {
+				totalTravelled -= intermed.getDist();
+			}
+			if (intermed.getDropCount() > 0) {
+				removeCount += intermed.getDropCount();
+			}
+			ctr += 1;
+		}
+
+		// System.out.println("Removing: " + removeCount);
+		List<Path> path = model.getCabPath().get(scheduledCab.getCabNo());
+		for (int index = 0; index < removeCount; index += 1) {
+			path.remove(path.size() - 1);
+		}
+
 		if (!cabFoundInSrc) {
 			scheduledCab.setPickingAnyone(true);
 
@@ -468,26 +509,6 @@ public class CabScheduler {
 			eventQueue.add(event);
 		}
 
-		int ctr = 0;
-		int removeCount = 0;
-		List<IntermediateNode> intermediateNodes = new ArrayList<IntermediateNode>();
-		for (IntermediateNode intermed : scheduledCab.getPath()) {
-			intermediateNodes.add(intermed);
-			if ((ctr != 0) && !cabFoundInSrc) {
-				totalTravelled -= intermed.getDist();				
-			}			
-			if (intermed.getDropCount() > 0) {
-				removeCount += 1;
-			}
-			ctr += 1;
-		}
-		
-		//System.out.println("Removing: " + removeCount);
-		List<Path> path = model.getCabPath().get(scheduledCab.getCabNo());
-		for (int index = 0; index < removeCount; index += 1) {
-			path.remove(path.size() - 1);
-		}
-				
 		scheduledCab.getPath().clear();
 
 		Interval removeInterval = new Interval(0, 2880, scheduledCab);
@@ -646,18 +667,24 @@ public class CabScheduler {
 					event = new Event(EventTypes.REACHED_TARGET_NODE,
 							scheduledCab, rideRequest, Math.ceil(timeInstant),
 							dest, scheduledCab.getVersion(), dropCount);
-					model.getCabPath()
-							.get(scheduledCab.getCabNo())
-							.add(new Path(dest, (int) Math.ceil(timeInstant),
-									EventTypes.REACHED_TARGET_NODE));
+					for (int ctr = 0; ctr < dropCount; ctr += 1) {
+						model.getCabPath()
+								.get(scheduledCab.getCabNo())
+								.add(new Path(dest, (int) Math
+										.ceil(timeInstant),
+										EventTypes.REACHED_TARGET_NODE));
+					}
 				} else {
 					event = new Event(EventTypes.REACHED_PARTIAL_TARGET_NODE,
 							scheduledCab, rideRequest, Math.ceil(timeInstant),
 							dest, scheduledCab.getVersion(), dropCount);
-					model.getCabPath()
-							.get(scheduledCab.getCabNo())
-							.add(new Path(dest, (int) Math.ceil(timeInstant),
-									EventTypes.REACHED_PARTIAL_TARGET_NODE));
+					for (int ctr = 0; ctr < dropCount; ctr += 1) {
+						model.getCabPath()
+								.get(scheduledCab.getCabNo())
+								.add(new Path(dest, (int) Math
+										.ceil(timeInstant),
+										EventTypes.REACHED_PARTIAL_TARGET_NODE));
+					}
 				}
 				scheduledCab.getPath().add(
 						new IntermediateNode(dest, dropCount, val));
@@ -683,7 +710,8 @@ public class CabScheduler {
 		List<Node> nodes = model.getNodes();
 		Stack<Integer> revPath = new Stack<Integer>();
 		int[][] prev = model.getPrev();
-		double timeInstant = currentTime;
+		double timeInstant = (currentTime > interval.getStart()) ? currentTime
+				: interval.getStart();
 		int d = pickUpDestination;
 
 		scheduledCab.setPickingAnyone(true);

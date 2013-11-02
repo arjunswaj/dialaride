@@ -40,10 +40,10 @@ public class DialARideController {
 		List<Integer> distVals = new ArrayList<Integer>(vals);
 		Collections.sort(distVals);
 		int ctr = 0;
-		for (Integer value : distVals) {
-			System.out.println(ctr + ". " + value);
-			ctr += 1;
-		}
+//		for (Integer value : distVals) {
+//			System.out.println(ctr + ". " + value);
+//			ctr += 1;
+//		}
 		return distVals;
 	}
 
@@ -56,31 +56,45 @@ public class DialARideController {
 			dijkstra.computeShortestPaths(model);
 			// System.out.println(model);
 			List<Integer> distVals = testModule(model);
+			int revenue = 0;
+			int optimalThresholdValue = 0;
 			for (Integer thresholdValue : distVals) {
 				CabScheduler cabScheduler = new CabScheduler();
 				cabScheduler.schedule(model, thresholdValue);
-	
-				int counter = 1;
-	//			for (Integer cabNo : model.getCabPath().keySet()) {
-	//				List<Path> pathList = model.getCabPath().get(cabNo);
-	//				StringBuilder sb = new StringBuilder();
-	//				sb.append(counter).append(": ");
-	//				for (Path path : pathList) {
-	//					sb.append("(").append(path.getNodeNumber()).append(", ")
-	//							.append(path.getTimeInstant()).append(", ")
-	//							.append(path.getEventTypes()).append(") ");
-	//				}
-	//				System.out.println(sb.toString());
-	//				counter += 1;
-	//			}
-	
+				if (model.getMaxRevenue() > revenue) {
+					revenue = model.getMaxRevenue();
+					optimalThresholdValue = thresholdValue;
+				}						
 				model = fileParser.parseDataFromFile(file);
 				dijkstra.computeShortestPaths(model);
-				System.out.println();
 			 }
+			
+			model = fileParser.parseDataFromFile(file);
+			dijkstra.computeShortestPaths(model);
+			CabScheduler cabScheduler = new CabScheduler();
+			cabScheduler.schedule(model, optimalThresholdValue);											
+			
+			
+			int counter = 1;
+			for (Integer cabNo : model.getCabPath().keySet()) {
+					List<Path> pathList = model.getCabPath().get(cabNo);
+					StringBuilder sb = new StringBuilder();
+					sb.append(counter).append(": ");
+					for (Path path : pathList) {
+						sb.append("(").append(path.getNodeNumber()).append(", ")
+								.append(path.getTimeInstant()).append(", ")
+								.append(path.getEventTypes()).append(") ");
+					}
+					System.out.println(sb.toString() + "\n");
+					counter += 1;
+				}
+			System.out.println("Successfully scheduled: " + model.getSuccessfullyScheduledRequests()
+					+ "\nRejected Requests: " + model.getRejectedRequests() + "\nRevenue: "
+					+ model.getMaxRevenue());
+			System.out.println("Total travelled: " + model.getTotalDistance());
 			// System.out.println(model);
 			for (Node node : model.getNodes()) {
-				// System.out.println(node);
+				 System.out.println(node);
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
