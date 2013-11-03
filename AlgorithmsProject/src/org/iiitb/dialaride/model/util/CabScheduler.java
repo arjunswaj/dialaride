@@ -152,14 +152,14 @@ public class CabScheduler {
 						.getTimeInstant()), cab));
 
 		cab.getPath().remove(0);
-		cab.setPassengers(cab.getPassengers() - event.getDropCounts());
+		// cab.setPassengers(cab.getPassengers() - event.getDropCounts());
 		if (!isPartial) {
 			cab.setDroppingAnyone(false);
 			cabsSet.add(new Interval((int) Math.ceil(event.getTimeInstant()),
 					2880, cab));
-			 //cab.setPassengers(0);
+			 cab.setPassengers(0);
 		} else {
-			// cab.setPassengers(cab.getPassengers() - event.getDropCounts());
+			 cab.setPassengers(cab.getPassengers() - event.getDropCounts());
 		}
 
 		if (0 > cab.getPassengers()) {
