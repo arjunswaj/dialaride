@@ -7,108 +7,129 @@ import java.util.Map;
 
 public class Cab implements Comparable<Cab> {
 
-	private int cabNo;
+  private int cabNo;
 
-	private int capacity;
+  private int capacity;
 
-	private int passengers;
+  private int passengers;
 
-	private int currentNode;
+  private int currentNode;
 
-	private boolean isPickingAnyone;
+  private boolean isPickingAnyone;
 
-	private boolean isDroppingAnyone;
+  private boolean isDroppingAnyone;
 
-	private int version;
+  private int version;
 
-	private List<IntermediateNode> path = new ArrayList<IntermediateNode>();
+  private int revenue;
 
-	public Cab(int cabNo, int currentNode, int capacity,
-			boolean isPickingAnyone, int version) {
-		super();
-		this.cabNo = cabNo;
-		this.currentNode = currentNode;
-		this.capacity = capacity;
-		this.isPickingAnyone = isPickingAnyone;
-		this.version = version;
-		this.passengers = 0;
-	}
+  private int distanceCovered;
 
-	public int getCapacity() {
-		return capacity;
-	}
+  private List<IntermediateNode> path = new ArrayList<IntermediateNode>();
 
-	public void setCapacity(int capacity) {
-		this.capacity = capacity;
-	}
+  public Cab(int cabNo, int currentNode, int capacity, boolean isPickingAnyone,
+      int version) {
+    super();
+    this.cabNo = cabNo;
+    this.currentNode = currentNode;
+    this.capacity = capacity;
+    this.isPickingAnyone = isPickingAnyone;
+    this.version = version;
+    this.passengers = 0;
+    this.revenue = 0;
+    this.distanceCovered = 0;
+  }
 
-	public int getCabNo() {
-		return cabNo;
-	}
+  public int getCapacity() {
+    return capacity;
+  }
 
-	public void setCabNo(int cabNo) {
-		this.cabNo = cabNo;
-	}
+  public void setCapacity(int capacity) {
+    this.capacity = capacity;
+  }
 
-	public int getPassengers() {
-		return passengers;
-	}
+  public int getCabNo() {
+    return cabNo;
+  }
 
-	public void setPassengers(int passengers) {
-		this.passengers = passengers;
-	}
+  public void setCabNo(int cabNo) {
+    this.cabNo = cabNo;
+  }
 
-	public int getCurrentNode() {
-		return currentNode;
-	}
+  public int getPassengers() {
+    return passengers;
+  }
 
-	public void setCurrentNode(int currentNode) {
-		this.currentNode = currentNode;
-	}
+  public void setPassengers(int passengers) {
+    this.passengers = passengers;
+  }
 
-	public List<IntermediateNode> getPath() {
-		return path;
-	}
+  public int getCurrentNode() {
+    return currentNode;
+  }
 
-	public void setPath(List<IntermediateNode> path) {
-		this.path = path;
-	}
+  public void setCurrentNode(int currentNode) {
+    this.currentNode = currentNode;
+  }
 
-	public boolean isPickingAnyone() {
-		return isPickingAnyone;
-	}
+  public List<IntermediateNode> getPath() {
+    return path;
+  }
 
-	public void setPickingAnyone(boolean isPickingAnyone) {
-		this.isPickingAnyone = isPickingAnyone;
-	}
+  public void setPath(List<IntermediateNode> path) {
+    this.path = path;
+  }
 
-	public boolean isDroppingAnyone() {
-		return isDroppingAnyone;
-	}
+  public boolean isPickingAnyone() {
+    return isPickingAnyone;
+  }
 
-	public void setDroppingAnyone(boolean isDroppingAnyone) {
-		this.isDroppingAnyone = isDroppingAnyone;
-	}
+  public void setPickingAnyone(boolean isPickingAnyone) {
+    this.isPickingAnyone = isPickingAnyone;
+  }
 
-	public int getVersion() {
-		return version;
-	}
+  public boolean isDroppingAnyone() {
+    return isDroppingAnyone;
+  }
 
-	public void setVersion(int version) {
-		this.version = version;
-	}
+  public void setDroppingAnyone(boolean isDroppingAnyone) {
+    this.isDroppingAnyone = isDroppingAnyone;
+  }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Cab No: ").append(cabNo).append(", Capacity: ")
-				.append(capacity).append(", Passengers: ").append(passengers)
-				.append("");
-		return sb.toString();
-	}
+  public int getVersion() {
+    return version;
+  }
 
-	@Override
-	public int compareTo(Cab arg0) {
-		return this.cabNo - arg0.getCabNo();
-	}
+  public void setVersion(int version) {
+    this.version = version;
+  }
+
+  public int getRevenue() {
+    return revenue;
+  }
+
+  public void setRevenue(int revenue) {
+    this.revenue = revenue;
+  }
+
+  public int getDistanceCovered() {
+    return distanceCovered;
+  }
+
+  public void setDistanceCovered(int distanceCovered) {
+    this.distanceCovered = distanceCovered;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Cab No: ").append(cabNo).append(", Capacity: ").append(capacity)
+        .append(", Passengers: ").append(passengers).append("");
+    return sb.toString();
+  }
+
+  @Override
+  public int compareTo(Cab arg0) {
+    return this.cabNo - arg0.getCabNo();
+  }
 }

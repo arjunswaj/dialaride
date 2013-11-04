@@ -54,7 +54,7 @@ public class FileParser {
 			List<Node> nodes = new ArrayList<Node>(numOfNodes);
 			Map<Integer, Set<Cab>> cabs = new HashMap<Integer, Set<Cab>>();
 			SortedMap<Integer, List<RideRequest>> rideRequests = new TreeMap<Integer, List<RideRequest>>();
-
+			Map<Integer, Cab> cabsLookUp = new HashMap<Integer, Cab>();
 			Map<Integer, List<Path>> cabPath = new HashMap<Integer, List<Path>>();
 			
 			for (int index = 0; index < numOfNodes; index += 1) {
@@ -99,6 +99,7 @@ public class FileParser {
 				// System.out.println("Cab No: " + cabNo + " nodeNo: " +
 				// nodeNo);
 				Cab cab = new Cab(cabNo, nodeNo, capacityOfVehicles, false, 1);
+				cabsLookUp.put(cabNo, cab);
 				Set<Cab> cabList = cabs.get(nodeNo);
 				if (null == cabList) {
 					cabList = new HashSet<Cab>();
@@ -140,7 +141,7 @@ public class FileParser {
 				}
 			}
 
-			model = new DialARideModel(cabs, nodes, rideRequests, cabPath);
+			model = new DialARideModel(cabs, nodes, rideRequests, cabPath, cabsLookUp);
 		} finally {
 			if (null != bufferedReader) {
 				bufferedReader.close();
