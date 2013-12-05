@@ -1,7 +1,6 @@
 package org.iiitb.dialaride.model.util;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -162,7 +161,8 @@ public class CabScheduler {
     }
 
     if (0 > cab.getPassengers()) {
-      System.out.println("Something's wrong dude!");
+      cab.setPassengers(0);
+      //System.out.println("Something's wrong dude!");
     }
 
   }
@@ -335,7 +335,7 @@ public class CabScheduler {
           isSubPath = true;
           break;
         }
-      }
+      }      
       if (isSubPath) {
         // Do Scheduling
         // System.out.println("Sub Path found while Dropping 2");
