@@ -1,6 +1,6 @@
 import org.iiitb.dialaride.controller.DialARideController;
 
-public class ProgramTest {
+public class MT2013026 {
 
 	/**
 	 * @param args
